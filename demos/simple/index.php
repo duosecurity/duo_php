@@ -67,7 +67,7 @@ else if(isset($_POST['user']) && isset($_POST['pass'])){
             });
 		</script>
 
-		<iframe id="duo_iframe" width="500" height="800" frameborder="0" allowtransparency="true" style="background: transparent;"></iframe>
+		<iframe id="duo_iframe" width="620" height="500" frameborder="0" allowtransparency="true" style="background: transparent;"></iframe>
 <?php
 	}
 }
