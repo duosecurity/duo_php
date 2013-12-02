@@ -24,6 +24,11 @@ define('AKEY',"THISISMYSUPERSECRETCUSTOMERKEYDONOTSHARE");
 define('IKEY',"");
 define('SKEY',"");
 define('HOST',"");
+/* 
+ * For security reasons, the above keys are best stored outside of
+ * the webroot in a production implementation.
+ */
+
 
 echo "<h1>Duo Security Web SDK Demo</h1>";
 echo "Username: demo <br>Password: letmein <br><br><br><hr>";
