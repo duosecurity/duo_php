@@ -15,11 +15,10 @@ class Duo {
 	const ERR_USER = 'ERR|The username passed to sign_request() is invalid.';
 	const ERR_IKEY = 'ERR|The Duo integration key passed to sign_request() is invalid.';
 	const ERR_SKEY = 'ERR|The Duo secret key passed to sign_request() is invalid.';
-	const ERR_AKEY =  "ERR|The application secret key passed to sign_request() must be at least 40 characters."; 
+	const ERR_AKEY = 'ERR|The application secret key passed to sign_request() must be at least 40 characters.'; 
 
-	private static function sign_vals($key, $vals, $prefix, $expire) { 
-		$exp = time() + $expire;
-
+	private static function sign_vals($key, $vals, $prefix, $expire, $time=NULL) { 
+		$exp = ($time ? $time : time()) + $expire;
 		$val = $vals . '|' . $exp;
 		$b64 = base64_encode($val);
 		$cookie = $prefix . '|' . $b64;
@@ -28,8 +27,8 @@ class Duo {
 		return $cookie . '|' . $sig;
 	}
 
-	private static function parse_vals($key, $val, $prefix) {
-		$ts = time();
+	private static function parse_vals($key, $val, $prefix, $time=NULL) {
+		$ts = ($time ? $time : time());
 		list($u_prefix, $u_b64, $u_sig) = explode('|', $val);
 
 		$sig = hash_hmac("sha1", $u_prefix . '|' . $u_b64, $key);
@@ -50,7 +49,7 @@ class Duo {
 		return $user;
 	}
 
-	public static function signRequest($ikey, $skey, $akey, $username) {
+	public static function signRequest($ikey, $skey, $akey, $username, $time=NULL) {
 		if (!isset($username) || strlen($username) == 0){
 			return self::ERR_USER;
 		}
@@ -66,17 +65,17 @@ class Duo {
 
 		$vals = $username . '|' . $ikey;
 
-		$duo_sig = self::sign_vals($skey, $vals, self::DUO_PREFIX, self::DUO_EXPIRE);
-		$app_sig = self::sign_vals($akey, $vals, self::APP_PREFIX, self::APP_EXPIRE);	
+		$duo_sig = self::sign_vals($skey, $vals, self::DUO_PREFIX, self::DUO_EXPIRE, $time);
+		$app_sig = self::sign_vals($akey, $vals, self::APP_PREFIX, self::APP_EXPIRE, $time);	
 
 		return $duo_sig . ':' . $app_sig;
 	}
 
-	public static function verifyResponse($ikey, $skey, $akey, $sig_response) {
+	public static function verifyResponse($skey, $akey, $sig_response, $time=NULL) {
 		list($auth_sig, $app_sig) = explode(':', $sig_response);
 
-		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX);
-		$app_user = self::parse_vals($akey, $app_sig, self::APP_PREFIX);
+		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX, $time);
+		$app_user = self::parse_vals($akey, $app_sig, self::APP_PREFIX, $time);
 
 		if ($auth_user != $app_user) {
 			return null;
