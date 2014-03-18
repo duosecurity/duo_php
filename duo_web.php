@@ -71,7 +71,7 @@ class Duo {
 		return $duo_sig . ':' . $app_sig;
 	}
 
-	public static function verifyResponse($skey, $akey, $sig_response, $time=NULL) {
+	public static function verifyResponse($ikey, $skey, $akey, $sig_response, $time=NULL) {
 		list($auth_sig, $app_sig) = explode(':', $sig_response);
 
 		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX, $time);
