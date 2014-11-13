@@ -63,14 +63,10 @@ else if(isset($_POST['user']) && isset($_POST['pass'])){
 		//generate sig request and then load up Duo javascript and iframe
 		$sig_request = Duo::signRequest(IKEY, SKEY, AKEY, $_POST['user']);
 ?>
-		 <script src="Duo-Web-v1.bundled.min.js"></script>
-		<script>
-            Duo.init({
-                'host': <?php echo "'" . HOST . "'"; ?>,
-                'post_action':'index.php',
-                'sig_request':<?php echo "'" . $sig_request . "'"; ?>
-            });
-		</script>
+		<script src="Duo-Web-v1.bundled.min.js"></script>
+		<input type="hidden" id="duo_host" value="<?php echo HOST ; ?>">
+		<input type="hidden" id="duo_sig_request" value="<?php echo $sig_request; ?>">
+		<script src="Duo-Init.js"></script>
 
 		<iframe id="duo_iframe" width="620" height="500" frameborder="0" allowtransparency="true" style="background: transparent;"></iframe>
 <?php
