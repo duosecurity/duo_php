@@ -27,9 +27,14 @@ class Duo {
 		return $cookie . '|' . $sig;
 	}
 
-	private static function parse_vals($key, $val, $prefix, $time=NULL) {
+	private static function parse_vals($key, $val, $prefix, $ikey, $time=NULL) {
 		$ts = ($time ? $time : time());
-		list($u_prefix, $u_b64, $u_sig) = explode('|', $val);
+
+		$parts = explode('|', $val);
+		if (count($parts) != 3) {
+			return null;
+		}
+		list($u_prefix, $u_b64, $u_sig) = $parts;
 
 		$sig = hash_hmac("sha1", $u_prefix . '|' . $u_b64, $key);
 		if (hash_hmac("sha1", $sig, $key) != hash_hmac("sha1", $u_sig, $key)) {
@@ -40,8 +45,15 @@ class Duo {
 			return null;
 		}
 
-		list($user, $ikey, $exp) = explode('|', base64_decode($u_b64));
+		$cookie_parts = explode('|', base64_decode($u_b64));
+		if (count($cookie_parts) != 3) {
+			return null;
+		}
+		list($user, $u_ikey, $exp) = $cookie_parts;
 
+		if ($u_ikey != $ikey) {
+			return null;
+		}
 		if ($ts >= intval($exp)) {
 			return null;
 		}
@@ -50,7 +62,10 @@ class Duo {
 	}
 
 	public static function signRequest($ikey, $skey, $akey, $username, $time=NULL) {
-		if (!isset($username) || strlen($username) == 0){
+		if (!isset($username) || strlen($username) == 0) {
+			return self::ERR_USER;
+		}
+		if (strpos($username, '|') !== FALSE) {
 			return self::ERR_USER;
 		}
 		if (!isset($ikey) || strlen($ikey) != self::IKEY_LEN) {
@@ -66,7 +81,7 @@ class Duo {
 		$vals = $username . '|' . $ikey;
 
 		$duo_sig = self::sign_vals($skey, $vals, self::DUO_PREFIX, self::DUO_EXPIRE, $time);
-		$app_sig = self::sign_vals($akey, $vals, self::APP_PREFIX, self::APP_EXPIRE, $time);	
+		$app_sig = self::sign_vals($akey, $vals, self::APP_PREFIX, self::APP_EXPIRE, $time);
 
 		return $duo_sig . ':' . $app_sig;
 	}
@@ -74,8 +89,8 @@ class Duo {
 	public static function verifyResponse($ikey, $skey, $akey, $sig_response, $time=NULL) {
 		list($auth_sig, $app_sig) = explode(':', $sig_response);
 
-		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX, $time);
-		$app_user = self::parse_vals($akey, $app_sig, self::APP_PREFIX, $time);
+		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX, $ikey, $time);
+		$app_user = self::parse_vals($akey, $app_sig, self::APP_PREFIX, $ikey, $time);
 
 		if ($auth_user != $app_user) {
 			return null;
