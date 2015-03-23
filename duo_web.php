@@ -62,16 +62,16 @@ class Duo {
 	}
 
 	public static function signRequest($ikey, $skey, $akey, $username, $time=NULL) {
-		if (!isset($username) || strlen($username) == 0) {
+		if (!isset($username) || strlen($username) === 0) {
 			return self::ERR_USER;
 		}
 		if (strpos($username, '|') !== FALSE) {
 			return self::ERR_USER;
 		}
-		if (!isset($ikey) || strlen($ikey) != self::IKEY_LEN) {
+		if (!isset($ikey) || strlen($ikey) !== self::IKEY_LEN) {
 			return self::ERR_IKEY;
 		}
-		if (!isset($skey) || strlen($skey) != self::SKEY_LEN) {
+		if (!isset($skey) || strlen($skey) !== self::SKEY_LEN) {
 			return self::ERR_SKEY;
 		}
 		if (!isset($akey) || strlen($akey) < self::AKEY_LEN) {
