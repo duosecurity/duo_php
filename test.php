@@ -64,4 +64,7 @@ assert($user == null);
 $user = Duo::verifyResponse(WRONG_IKEY, SKEY, AKEY, FUTURE_RESPONSE . ":" . $valid_app_sig);
 assert($user == null);
 
+$user = Duo::verifyResponse(IKEY, SKEY, AKEY, FUTURE_RESPONSE . ":" . $valid_app_sig);
+assert($user === USER);
+
 ?>
