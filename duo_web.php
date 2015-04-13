@@ -31,27 +31,27 @@ class Duo {
 		$ts = ($time ? $time : time());
 
 		$parts = explode('|', $val);
-		if (count($parts) != 3) {
+		if (count($parts) !== 3) {
 			return null;
 		}
 		list($u_prefix, $u_b64, $u_sig) = $parts;
 
 		$sig = hash_hmac("sha1", $u_prefix . '|' . $u_b64, $key);
-		if (hash_hmac("sha1", $sig, $key) != hash_hmac("sha1", $u_sig, $key)) {
+		if (hash_hmac("sha1", $sig, $key) !== hash_hmac("sha1", $u_sig, $key)) {
 			return null;
 		}
 
-		if ($u_prefix != $prefix) {
+		if ($u_prefix !== $prefix) {
 			return null;
 		}
 
 		$cookie_parts = explode('|', base64_decode($u_b64));
-		if (count($cookie_parts) != 3) {
+		if (count($cookie_parts) !== 3) {
 			return null;
 		}
 		list($user, $u_ikey, $exp) = $cookie_parts;
 
-		if ($u_ikey != $ikey) {
+		if ($u_ikey !== $ikey) {
 			return null;
 		}
 		if ($ts >= intval($exp)) {
@@ -92,7 +92,7 @@ class Duo {
 		$auth_user = self::parse_vals($skey, $auth_sig, self::AUTH_PREFIX, $ikey, $time);
 		$app_user = self::parse_vals($akey, $app_sig, self::APP_PREFIX, $ikey, $time);
 
-		if ($auth_user != $app_user) {
+		if ($auth_user !== $app_user) {
 			return null;
 		}
 
