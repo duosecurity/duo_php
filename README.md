@@ -14,6 +14,20 @@ What's here:
 
 Developer documentation: <http://www.duosecurity.com/docs/duoweb>
 
+# Demo
+
+First add an IKEY, SKEY, and HOST to `demos/simple/index.php`, then run the following:
+
+```
+$ php -S localhost:8080 -t demos/simple/
+```
+
+# Test
+
+```
+$ php test.php
+```
+
 # Support
 
 Report any bugs, feature requests, etc. to us directly:

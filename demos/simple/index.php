@@ -66,22 +66,9 @@ else if (isset($_POST['user']) && isset($_POST['pass'])) {
          */
         $sig_request = Duo::signRequest(IKEY, SKEY, AKEY, $_POST['user']);
     ?>
-        <script src="Duo-Web-v1.bundled.min.js"></script>
-        <input type="hidden" id="duo_host" value="<?php echo HOST ; ?>">
-        <input type="hidden" id="duo_sig_request" value="<?php echo $sig_request; ?>">
-        <script src="Duo-Init.js"></script>
-
-        <style>
-            #duo_iframe {
-                width: 100%;
-                min-width: 304px;
-                max-width: 620px;
-                height: 330px;
-                background: transparent;
-            }
-        </style>
-
-        <iframe id="duo_iframe" frameborder="0"></iframe>
+        <script type="text/javascript" src="Duo-Web-v2.js"></script>
+        <link rel="stylesheet" type="text/css" href="Duo-Frame.css">
+        <iframe id="duo_iframe" frameborder="0" data-host="<?php echo HOST; ?>" data-sig-request="<?php echo $sig_request; ?>"></iframe>
 <?php
     }
 }
