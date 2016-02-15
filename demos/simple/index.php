@@ -6,7 +6,7 @@
  * protected using Duo
  */
 
-require_once '../../duo_web.php';
+require_once '../../src/Web.php';
 
 define('USERNAME', 'demo');
 define('PASSWORD', 'letmein');
@@ -44,7 +44,7 @@ if (isset($_POST['sig_response'])) {
      * returns the username we logged in with. You can then set any
      * cookies/session data for that username and complete the login process.
      */
-    $resp = Duo::verifyResponse(IKEY, SKEY, AKEY, $_POST['sig_response']);
+    $resp = Duo\Web::verifyResponse(IKEY, SKEY, AKEY, $_POST['sig_response']);
     if ($resp === USERNAME) {
         // Password protected content would go here.
         echo 'Hi, ' . $resp . '<br>';
@@ -64,11 +64,14 @@ else if (isset($_POST['user']) && isset($_POST['pass'])) {
          * Perform secondary auth, generate sig request, then load up Duo
          * javascript and iframe.
          */
-        $sig_request = Duo::signRequest(IKEY, SKEY, AKEY, $_POST['user']);
+        $sig_request = Duo\Web::signRequest(IKEY, SKEY, AKEY, $_POST['user']);
     ?>
         <script type="text/javascript" src="Duo-Web-v2.js"></script>
         <link rel="stylesheet" type="text/css" href="Duo-Frame.css">
-        <iframe id="duo_iframe" frameborder="0" data-host="<?php echo HOST; ?>" data-sig-request="<?php echo $sig_request; ?>"></iframe>
+        <iframe id="duo_iframe"
+            data-host="<?php echo HOST; ?>"
+            data-sig-request="<?php echo $sig_request; ?>"
+        ></iframe>
 <?php
     }
 }
