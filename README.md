@@ -62,14 +62,20 @@ $ php -S localhost:8080 -t demos/simple/
 # Test
 
 ```
-$ php vendor/bin/phpunit
-PHPUnit 5.1.6 by Sebastian Bergmann and contributors.
+$ ./vendor/bin/phpunit -c phpunit.xml
+PHPUnit 5.3.2 by Sebastian Bergmann and contributors.
 
 .............                                                     13 / 13 (100%)
 
-Time: 63 ms, Memory: 6.00Mb
+Time: 62 ms, Memory: 6.00Mb
 
 OK (13 tests, 13 assertions)
+```
+
+# Lint
+
+```
+$ ./vendor/bin/phpcs --standard=PSR2 -n src/* tests/*
 ```
 
 # Support
