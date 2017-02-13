@@ -13,7 +13,7 @@ The `duo_web.php` file has been deprecated in favor of a `PSR-4` (http://www.php
 To update your code please make the following changes:
 * Install globally via composer as seen below
 * Change instances of `Duo::signRequest` to `Duo\Web::signRequest`
-* Change instances of `Duo::verifyRequest` to `Duo\Web::verifyRequest`
+* Change instances of `Duo::verifyResponse` to `Duo\Web::verifyResponse`
 
 # Installing
 
