@@ -6,15 +6,6 @@ This package allows a web developer to quickly add Duo's interactive, self-servi
 
 Files located in the `js` directory should be hosted by your webserver for inclusion in web pages.
 
-# Deprecation
-
-The `duo_web.php` file has been deprecated in favor of a `PSR-4` (http://www.php-fig.org/psr/psr-4/) style package.
-
-To update your code please make the following changes:
-* Install globally via composer as seen below
-* Change instances of `Duo::signRequest` to `Duo\Web::signRequest`
-* Change instances of `Duo::verifyResponse` to `Duo\Web::verifyResponse`
-
 # Installing
 
 Development:
