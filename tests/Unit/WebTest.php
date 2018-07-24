@@ -31,6 +31,12 @@ class DuoTest extends \PHPUnit_Framework_TestCase
         $this->valid_app_sig = $valid_app_sig;
         $this->invalid_app_sig = $invalid_app_sig;
         $this->valid_future_response = "AUTH|dGVzdHVzZXJ8RElYWFhYWFhYWFhYWFhYWFhYWFh8MTYxNTcyNzI0Mw==|d20ad0d1e62d84b00a3e74ec201a5917e77b6aef";
+        $this->valid_future_blob = "APP|dGVzdHVzZXJ8RElYWFhYWFhYWFhYWFhYWFhYWFh8MTY5MDEyODUyNQ==|19a752347685a65be2dd3866582473d48d43825c38fe1eac672a4105c91343eb7d27b200d542a7102fb6576f5e8309500f9910bbd4c5d72ff0eaa3d99bbf4e96";
+
+        $this->mocked_client = $this->getMockBuilder("\DuoAPI\Frame")
+                                    ->setMethods(["init", "auth_response"])
+                                    ->disableOriginalConstructor()
+                                    ->getMock();
     }
 
     public function testNonNull()
@@ -204,6 +210,149 @@ class DuoTest extends \PHPUnit_Framework_TestCase
                 $this->valid_future_response . ":" . $this->valid_app_sig
             ),
             null
+        );
+    }
+
+    public function testInitAuthEmptyUsername()
+    {
+        $this->assertEquals(
+            \Duo\Web::initAuth(
+                $this->mocked_client,
+                self::IKEY,
+                self::AKEY,
+                ""
+            ),
+            \Duo\Web::ERR_USER
+        );
+    }
+
+    public function testInitAuthExtraSeparator()
+    {
+        $this->assertEquals(
+            \Duo\Web::initAuth(
+                $this->mocked_client,
+                self::IKEY,
+                self::AKEY,
+                "in|valid"
+            ),
+            \Duo\Web::ERR_USER
+        );
+    }
+
+    public function testInitAuthInvalidIkey()
+    {
+        $this->assertEquals(
+            \Duo\Web::initAuth(
+                $this->mocked_client,
+                "invalid",
+                self::AKEY,
+                self::USER
+            ),
+            \Duo\Web::ERR_IKEY
+        );
+    }
+
+    public function testInitAuthInvalidAkey()
+    {
+        $this->assertEquals(
+            \Duo\Web::initAuth(
+                $this->mocked_client,
+                self::IKEY,
+                "invalid",
+                self::USER
+            ),
+            \Duo\Web::ERR_AKEY
+        );
+    }
+
+    public function testInitAuthSuccess()
+    {
+        $txid = "be869f64-d41e-4667-8c43-1105396fbaa0";
+        $response = [
+            "response" => [
+                "response" => [
+                    "txid" => $txid,
+                ],
+                "stat" => "OK",
+            ],
+            "success" => true,
+            "http_status_code" => 200 ,
+        ];
+
+        $this->mocked_client->method("init")
+                            ->willReturn($response);
+
+        $this->assertEquals(
+            \Duo\Web::initAuth(
+                $this->mocked_client,
+                self::IKEY,
+                self::AKEY,
+                self::USER
+            ),
+            $txid
+        );
+    }
+
+    public function testVerifyAuthSuccess()
+    {
+        $response = [
+            "response" => [
+                "response" => [
+                    "app_blob" => $this->valid_future_blob,
+                    "client_version" => "duo_php/1.0.0",
+                    "enroll_only" => false,
+                    "expire" => 1690124925,
+                    "ikey" => self::IKEY,
+                    "uname" => self::USER,
+                ],
+                "stat" => "OK",
+            ],
+            "success" => true,
+            "http_status_code" => 200,
+        ];
+
+        $this->mocked_client->method("auth_response")
+                            ->willReturn($response);
+
+        $this->assertEquals(
+            \Duo\Web::verifyAuth(
+                $this->mocked_client,
+                self::IKEY,
+                self::AKEY,
+                "unused"
+            ),
+            self::USER
+        );
+    }
+
+    public function testVerifyAuthInvalidUname()
+    {
+        $response = [
+            "response" => [
+                "response" => [
+                    "app_blob" => $this->valid_future_blob,
+                    "client_version" => "duo_php/1.0.0",
+                    "enroll_only" => false,
+                    "expire" => 1690124925,
+                    "ikey" => self::IKEY,
+                    "uname" => "invalid",
+                ],
+                "stat" => "OK",
+            ],
+            "success" => true,
+            "http_status_code" => 200,
+        ];
+
+        $this->mocked_client->method("auth_response")
+                            ->willReturn($response);
+
+        $this->assertNull(
+            \Duo\Web::verifyAuth(
+                $this->mocked_client,
+                self::IKEY,
+                self::AKEY,
+                "unused"
+            )
         );
     }
 }

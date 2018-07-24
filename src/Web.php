@@ -7,35 +7,38 @@ namespace Duo;
 
 class Web
 {
-
     const DUO_PREFIX = "TX";
     const APP_PREFIX = "APP";
     const AUTH_PREFIX = "AUTH";
 
     const DUO_EXPIRE = 300;
     const APP_EXPIRE = 3600;
+    const INIT_EXPIRE = 300;
 
     const IKEY_LEN = 20;
     const SKEY_LEN = 40;
     const AKEY_LEN = 40; // if this changes you have to change ERR_AKEY
 
-    const ERR_USER = 'ERR|The username passed to sign_request() is invalid.';
-    const ERR_IKEY = 'ERR|The Duo integration key passed to sign_request() is invalid.';
-    const ERR_SKEY = 'ERR|The Duo secret key passed to sign_request() is invalid.';
-    const ERR_AKEY = 'ERR|The application secret key passed to sign_request() must be at least 40 characters.';
+    const ERR_USER = 'ERR|The username specified is invalid.';
+    const ERR_IKEY = 'ERR|The Duo integration key specified is invalid.';
+    const ERR_SKEY = 'ERR|The Duo secret key specified is invalid.';
+    const ERR_AKEY = 'ERR|The application secret key specified must be at least 40 characters.';
 
-    private static function signVals($key, $vals, $prefix, $expire, $time = null)
+    const LIBRARY_NAME = 'duo_php';
+    const VERSION = '1.0.0';
+
+    private static function signVals($key, $vals, $prefix, $expire, $time = null, $algo = "sha1")
     {
         $exp = ($time ? $time : time()) + $expire;
         $val = $vals . '|' . $exp;
         $b64 = base64_encode($val);
         $cookie = $prefix . '|' . $b64;
 
-        $sig = hash_hmac("sha1", $cookie, $key);
+        $sig = hash_hmac($algo, $cookie, $key);
         return $cookie . '|' . $sig;
     }
 
-    private static function parseVals($key, $val, $prefix, $ikey, $time = null)
+    private static function parseVals($key, $val, $prefix, $ikey, $time = null, $algo = "sha1")
     {
         $ts = ($time ? $time : time());
 
@@ -45,8 +48,8 @@ class Web
         }
         list($u_prefix, $u_b64, $u_sig) = $parts;
 
-        $sig = hash_hmac("sha1", $u_prefix . '|' . $u_b64, $key);
-        if (hash_hmac("sha1", $sig, $key) !== hash_hmac("sha1", $u_sig, $key)) {
+        $sig = hash_hmac($algo, $u_prefix . '|' . $u_b64, $key);
+        if (hash_hmac($algo, $sig, $key) !== hash_hmac($algo, $u_sig, $key)) {
             return null;
         }
 
@@ -108,5 +111,66 @@ class Web
         }
 
         return $auth_user;
+    }
+
+    public static function initAuth($client, $ikey, $akey, $username, $enroll_only = false)
+    {
+        if (!isset($username) || strlen($username) === 0) {
+            return self::ERR_USER;
+        }
+        if (strpos($username, '|') !== false) {
+            return self::ERR_USER;
+        }
+        if (!isset($ikey) || strlen($ikey) !== self::IKEY_LEN) {
+            return self::ERR_IKEY;
+        }
+        if (!isset($akey) || strlen($akey) < self::AKEY_LEN) {
+            return self::ERR_AKEY;
+        }
+
+        $blob = $username . '|' . $ikey;
+        $signed_blob = self::signVals(
+            $akey,
+            $blob,
+            self::APP_PREFIX,
+            self::APP_EXPIRE,
+            null,
+            'sha512'
+        );
+        $expire = time() + self::INIT_EXPIRE;
+        $client_version = self::LIBRARY_NAME . '/' . self::VERSION;
+
+        $response = $client->init(
+            $username,
+            $signed_blob,
+            $expire,
+            $client_version,
+            $enroll_only
+        );
+
+        return $response['response']['response']['txid'];
+    }
+
+    public static function verifyAuth($client, $ikey, $akey, $response_txid)
+    {
+        $response = $client->auth_response($response_txid);
+
+        $username = $response['response']['response']['uname'];
+        $signed_blob = $response['response']['response']['app_blob'];
+
+        $parsed_user = self::parseVals(
+            $akey,
+            $signed_blob,
+            self::APP_PREFIX,
+            $ikey,
+            null,
+            'sha512'
+        );
+
+        if ($username !== $parsed_user) {
+            return null;
+        }
+
+        return $username;
     }
 }

@@ -17,5 +17,8 @@
         "phpunit/phpunit": "~5.7",
         "satooshi/php-coveralls": "dev-master",
         "squizlabs/php_codesniffer": "2.*"
+    },
+    "suggest": {
+        "duosecurity/duo_api_php": "Needed to support WebSDKv2 authentications"
     }
 }
