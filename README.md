@@ -34,6 +34,8 @@ Or add the following to your project:
 }
 ```
 
+> **NOTE:** In order for the example in the `demos/simple-v2` directory to work, you will also need to use Composer to install the [duo_api_php package](https://github.com/duosecurity/duo_api_php).
+
 # Using
 
 ```
