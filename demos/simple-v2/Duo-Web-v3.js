@@ -1,6 +1,6 @@
 /**
  * Duo Web SDK v3
- * Copyright 2017, Duo Security
+ * Copyright 2019, Duo Security
  */
 
 (function (root, factory) {
@@ -34,15 +34,35 @@
         'duomobile.s3-us-west-1.amazonaws.com'
     ];
 
-    var iframeId = 'duo_iframe',
-        postAction = '',
-        postArgument = 'response_txid',
+    var postAction,
+        postArgument,
         host,
         initTxid,
         iframe,
         submitCallback;
 
-    function throwError(message, url) {
+    // We use this function instead of setting initial values in the var
+    // declarations to make sure the initial values and subsequent
+    // re-initializations are always the same.
+    initializeStatefulVariables();
+
+    /**
+     * Set local variables to whatever they should be before you call init().
+     */
+    function initializeStatefulVariables() {
+        postAction = '';
+        postArgument = 'response_txid';
+        host = undefined;
+        initTxid = undefined;
+        iframe = undefined;
+        submitCallback = undefined;
+    }
+
+    function throwError(message, givenUrl) {
+        var url = (
+            givenUrl ||
+            'https://www.duosecurity.com/docs/duoweb#3.-show-the-iframe'
+        );
         throw new Error(
             'Duo Web SDK error: ' + message +
             (url ? ('\n' + 'See ' + url + ' for more information') : '')
@@ -96,30 +116,6 @@
     }
 
     /**
-     * This function is set up to run when the DOM is ready, if the iframe was
-     * not available during `init`.
-     */
-    function onDOMReady() {
-        iframe = document.getElementById(iframeId);
-
-        if (!iframe) {
-            throw new Error(
-                'This page does not contain an iframe for Duo to use.' +
-                'Add an element like <iframe id="duo_iframe"></iframe> ' +
-                'to this page.  ' +
-                'See https://www.duosecurity.com/docs/duoweb#3.-show-the-iframe ' +
-                'for more information.'
-            );
-        }
-
-        // we've got an iframe, away we go!
-        ready();
-
-        // always clean up after yourself
-        offReady(onDOMReady);
-    }
-
-    /**
      * Validate that a MessageEvent came from the Duo service, and that it
      * is a properly formatted payload.
      *
@@ -162,7 +158,7 @@
      * ```
      *
      * Example using `data-` attributes:
-     * ```
+     * ```html
      * <iframe id="duo_iframe"
      *         data-host="api-main.duo.test"
      *         data-init-txid="..."
@@ -172,21 +168,57 @@
      * </iframe>
      * ```
      *
+     * Some browsers (especially embedded browsers) don't like it when the Duo
+     * Web SDK changes the `src` attribute on the iframe. To prevent this, there
+     * is an alternative way to use the Duo Web SDK:
+     *
+     * Add a div (or any other container element) instead of an iframe to the
+     * DOM with an id of "duo_iframe", or pass that element to the
+     * `iframeContainer` parameter of `Duo.init`. An iframe will be created and
+     * inserted into that container element, preventing `src` change related
+     * bugs. WARNING: All other elements in the container will be deleted.
+     *
+     * The `iframeAttributes` parameter of `Duo.init` is available to set any
+     * attributes on the inserted iframe if the Duo Web SDK is inserting the
+     * iframe. For details, see the parameter documentation below.
+     *
      * @param {Object} options
-     * @param {String} options.iframe The iframe, or id of an iframe to set up
-     * @param {String} options.host Hostname
+     * @param {String} options.host - Hostname for the Duo Prompt.
      * @param {String} options.init_txid Transaction ID returned by the
      *     /frame/init call
-     * @param {String} [options.post_action=''] URL to POST back to after
-     *     successful auth
-     * @param {String} [options.post_argument='response_txid'] Parameter name
-     *     to use for response token
-     * @param {Function} [options.submit_callback] If provided, duo will not
-     *     submit the form, and will instead execute the callback function with
-     *     reference to the "duo_form" form object. Can be used to prevent the
-     *     webpage from reloading.
+     * @param {String|HTMLElement} [options.iframe] - The iframe, or id of an
+     *     iframe that will be used for the Duo Prompt. If you don't provide
+     *     this or the `iframeContainer` parameter the Duo Web SDK will default
+     *     to using whatever element has an id of "duo_iframe".
+     * @param {String|HTMLElement} [options.iframeContainer] - The element you
+     *     want the Duo Prompt inserted into, or the id of that element.
+     *     Anything inside this element will be deleted and replaced with an
+     *     iframe hosting the Duo prompt. If you don't provide this or the
+     *     `iframe` parameter the Duo Web SDK will default to using whatever
+     *     element has an id of "duo_iframe".
+     * @param {Object} [options.iframeAttributes] - Object with  names and
+     *     values coresponding to attributes you want added to the  Duo Prompt
+     *     iframe, like `title`, `width` and `allow`. WARNING: this parameter
+     *     only works if you use the `iframeContainer` parameter or add an id
+     *     of "duo_iframe" to an element that isn't an iframe. If you have
+     *     added an iframe to the DOM yourself, you should set those attributes
+     *     directly on the iframe.
+     * @param {String} [options.post_action=''] - URL to POST back to after a
+     *     successful auth.
+     * @param {String} [options.post_argument='sig_response'] - Parameter name
+     *     to use for response token.
+     * @param {Function} [options.submit_callback] - If provided, the Duo Web
+     *     SDK will not submit the form. Instead it will execute this callback
+     *     function passing in a reference to the "duo_form" form object.
+     *     `submit_callback`` can be used to prevent the webpage from reloading.
      */
     function init(options) {
+        // If init() is called more than once we have to reset all the local
+        // variables to ensure init() will work the same way every time. This
+        // helps people making single page applications. SPAs may periodically
+        // remove the iframe and add a new one that has to be initialized.
+        initializeStatefulVariables();
+
         if (options) {
             if (options.host) {
                 host = options.host;
@@ -204,37 +236,113 @@
                 postArgument = options.post_argument;
             }
 
-            if (options.iframe) {
-                if (options.iframe.tagName) {
-                    iframe = options.iframe;
-                } else if (typeof options.iframe === 'string') {
-                    iframeId = options.iframe;
-                }
-            }
-
             if (typeof options.submit_callback === 'function') {
                 submitCallback = options.submit_callback;
             }
         }
 
-        // if we were given an iframe, no need to wait for the rest of the DOM
-        if (iframe) {
-            ready();
+        var promptElement = getPromptElement(options);
+        if (promptElement) {
+            // If we can get the element that will host the prompt, set it.
+            ready(promptElement, options.iframeAttributes || {});
         } else {
-            // try to find the iframe in the DOM
-            iframe = document.getElementById(iframeId);
-
-            // iframe is in the DOM, away we go!
-            if (iframe) {
-                ready();
-            } else {
-                // wait until the DOM is ready, then try again
-                onReady(onDOMReady);
-            }
+            // If the element that will host the prompt isn't available yet, set
+            // it up after the DOM finishes loading.
+            asyncReady(options);
         }
 
         // always clean up after yourself!
         offReady(init);
+    }
+
+    /**
+     * Given the options from init(), get the iframe or iframe container that
+     * should be used for the Duo Prompt. Returns `null` if nothing was found.
+     */
+    function getPromptElement(options) {
+        var result;
+
+        if (options.iframe && options.iframeContainer) {
+            throwError(
+                'Passing both `iframe` and `iframeContainer` arguments at the' +
+                ' same time is not allowed.'
+            );
+        } else if (options.iframe) {
+            // If we are getting an iframe, try to get it and raise if the
+            // element we find is NOT an iframe.
+            result = getUserDefinedElement(options.iframe);
+            validateIframe(result);
+        } else if (options.iframeContainer) {
+            result = getUserDefinedElement(options.iframeContainer);
+            validateIframeContainer(result);
+        } else {
+            result = document.getElementById('duo_iframe');
+
+        }
+
+        return result;
+    }
+
+    /**
+     * When given an HTMLElement, return it. When given a string, get an element
+     * with that id, else return null.
+     */
+    function getUserDefinedElement(object) {
+        if (object.tagName) {
+            return object;
+        } else if (typeof object == 'string') {
+            return document.getElementById(object);
+        }
+        return null;
+    }
+
+    /**
+     * Check if the given thing is an iframe.
+     */
+    function isIframe(element) {
+        return (
+            element &&
+            element.tagName &&
+            element.tagName.toLowerCase() === 'iframe'
+        );
+    }
+
+    /**
+     * Throw an error if we are given an element that is NOT an iframe.
+     */
+    function validateIframe(element) {
+        if (element && !isIframe(element)) {
+            throwError(
+                '`iframe` only accepts an iframe element or the id of an' +
+                ' iframe. To use a non-iframe element, use the' +
+                ' `iframeContainer` argument.'
+            );
+        }
+    }
+
+    /**
+     * Throw an error if we are given an element that IS an iframe instead of an
+     * element that we can insert an iframe into.
+     */
+    function validateIframeContainer(element) {
+        if (element && isIframe(element)) {
+            throwError(
+                '`iframeContainer` only accepts a non-iframe element or the' +
+                ' id of a non-iframe. To use a non-iframe element, use the' +
+                ' `iframeContainer` argument on Duo.init().'
+            );
+        }
+    }
+
+    /**
+     * Generate the URL that goes to the Duo Prompt.
+     */
+    function generateIframeSrc() {
+        return [
+            'https://', host, '/frame/web/v3/auth?tx=', initTxid,
+            '&parent=', encodeURIComponent(document.location.href),
+            '&v=3.2'
+        ].join('');
     }
 
     /**
@@ -294,31 +402,55 @@
     }
 
     /**
+     * Register a callback to call ready() after the DOM has loaded.
+     */
+    function asyncReady(options) {
+        var callback = function() {
+            var promptElement = getPromptElement(options);
+            if (!promptElement) {
+                throwError(
+                    'This page does not contain an iframe for Duo to use.' +
+                    ' Add an element like' +
+                    ' <iframe id="duo_iframe"></iframe> to this page.'
+                );
+            }
+
+            ready(promptElement, options.iframeAttributes || {});
+
+            // Always clean up after yourself.
+            offReady(callback)
+        };
+
+        onReady(callback);
+    }
+
+    /**
      * Point the iframe at Duo, then wait for it to postMessage back to us.
      */
-    function ready() {
+    function ready(promptElement, iframeAttributes) {
         if (!host) {
-            host = getDataAttribute(iframe, 'host');
+            host = getDataAttribute(promptElement, 'host');
 
             if (!host) {
                 throwError(
                     'No API hostname is given for Duo to use.  Be sure to pass ' +
                     'a `host` parameter to Duo.init, or through the `data-host` ' +
-                    'attribute on the iframe element.',
-                    'https://www.duosecurity.com/docs/duoweb#3.-show-the-iframe'
+                    'attribute on the iframe element.'
                 );
             }
         }
 
         if (!initTxid) {
-            initTxid = getDataAttribute(iframe, 'initTxid');
+            initTxid = getDataAttribute(promptElement, 'initTxid');
 
             if (!initTxid) {
                 throwError(
                     'No valid init txid is given.  Be sure to give the ' +
                     '`init_txid` parameter to Duo.init, or use the ' +
                     '`data-init-txid` attribute on the iframe element.',
-                    'https://www.duosecurity.com/docs/duoweb#3.-show-the-iframe'
+                    // A different URL is given because currently there is no
+                    // external documentation specific to Web SDK v3.
+                    'https://duo.com/support'
                 );
             }
         }
@@ -326,19 +458,35 @@
         // if postAction/Argument are defaults, see if they are specified
         // as data attributes on the iframe
         if (postAction === '') {
-            postAction = getDataAttribute(iframe, 'postAction') || postAction;
+            postAction = getDataAttribute(promptElement, 'postAction') || postAction;
         }
 
         if (postArgument === 'response_txid') {
-            postArgument = getDataAttribute(iframe, 'postArgument') || postArgument;
+            postArgument = getDataAttribute(promptElement, 'postArgument') || postArgument;
         }
 
-        // point the iframe at Duo
-        iframe.src = [
-            'https://', host, '/frame/web/v3/auth?tx=', initTxid,
-            '&parent=', encodeURIComponent(document.location.href),
-            '&v=3.0'
-        ].join('');
+        if (isIframe(promptElement)) {
+            iframe = promptElement;
+            iframe.src = generateIframeSrc();
+        } else {
+            // If given a container to put an iframe in, clean out any children
+            // child elements in case `init()` was called more than once.
+            while (promptElement.firstChild) {
+                // We call `removeChild()` instead of doing `innerHTML = ""`
+                // to make sure we unbind any events.
+                promptElement.removeChild(promptElement.firstChild)
+            }
+
+            iframe = document.createElement('iframe');
+
+            // Set the src and all other attributes on the new iframe.
+            iframeAttributes['src'] = generateIframeSrc();
+            for (var name in iframeAttributes) {
+                iframe.setAttribute(name, iframeAttributes[name]);
+            }
+
+            promptElement.appendChild(iframe);
+        }
 
         // listen for the 'message' event
         onMessage(onReceivedMessage);
