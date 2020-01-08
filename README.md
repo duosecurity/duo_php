@@ -46,7 +46,7 @@ string(202) "TX|...TX_SIGNATURE...==|...TX_HASH...:APP|...APP_SIGNATURE...==|...
 
 # Demo
 
-First add an IKEY, SKEY, and HOST to `demos/simple/index.php`, then run the following:
+First add an IKEY, SKEY, and HOST to `demos/simple/index.php`, and then run the following:
 
 ```
 $ php -S localhost:8080 -t demos/simple/
