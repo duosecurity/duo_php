@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/duosecurity/duo_php.svg?branch=master)](https://travis-ci.org/duosecurity/duo_php)
 
-**duo_php** - Duo two-factor authentication for PHP web applications: https://duo.com/docs/duoweb
+**duo_php** - Duo two-factor authentication for PHP web applications: https://duo.com/docs/duoweb-v2
 
 This package allows a web developer to quickly add Duo's interactive, self-service, two-factor authentication to any web login form - without setting up secondary user accounts, directory synchronization, servers, or hardware.
 
