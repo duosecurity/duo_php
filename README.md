@@ -6,7 +6,7 @@
 [![Stars](https://img.shields.io/github/stars/duosecurity/duo_php)](https://github.com/duosecurity/duo_php/stargazers)
 [![License](https://img.shields.io/badge/License-View%20License-orange)](https://github.com/duosecurity/duo_php/blob/master/LICENSE)
 
-**duo_php** - Duo two-factor authentication for PHP web applications: https://duo.com/docs/duoweb
+**duo_php** - Duo two-factor authentication for PHP web applications: https://duo.com/docs/duoweb-v2
 
 This package allows a web developer to quickly add Duo's interactive, self-service, two-factor authentication to any web login form - without setting up secondary user accounts, directory synchronization, servers, or hardware.
 
