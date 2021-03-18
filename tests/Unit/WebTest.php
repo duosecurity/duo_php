@@ -30,7 +30,7 @@ class DuoTest extends \PHPUnit_Framework_TestCase
 
         $this->valid_app_sig = $valid_app_sig;
         $this->invalid_app_sig = $invalid_app_sig;
-        $this->valid_future_response = "AUTH|dGVzdHVzZXJ8RElYWFhYWFhYWFhYWFhYWFhYWFh8MTYxNTcyNzI0Mw==|d20ad0d1e62d84b00a3e74ec201a5917e77b6aef";
+        $this->valid_future_response = "AUTH|dGVzdHVzZXJ8RElYWFhYWFhYWFhYWFhYWFhYWFh8MjI0NzE0MDkyMQ==|d5fa72f8ba5f3d37d70dad615ff4901a77d46989";
     }
 
     public function testNonNull()
