@@ -22,5 +22,8 @@ jobs:
       - name: Composer install
         run: composer install
     
+      - name: PHP Linting
+        run: ./vendor/bin/phpcs --standard=PSR2 -n src/* tests/*
+
       - name: PHP tests
         run: ./vendor/bin/phpunit
