@@ -1,6 +1,6 @@
 # Overview
 
-[![Build Status](https://travis-ci.org/duosecurity/duo_php.svg?branch=master)](https://travis-ci.org/duosecurity/duo_php)
+[![Build Status](https://github.com/duosecurity/duo_php/workflows/PHP%20CI/badge.svg?branch=master)](https://github.com/duosecurity/duo_php/actions)
 [![Issues](https://img.shields.io/github/issues/duosecurity/duo_php)](https://github.com/duosecurity/duo_php/issues)
 [![Forks](https://img.shields.io/github/forks/duosecurity/duo_php)](https://github.com/duosecurity/duo_php/network/members)
 [![Stars](https://img.shields.io/github/stars/duosecurity/duo_php)](https://github.com/duosecurity/duo_php/stargazers)
